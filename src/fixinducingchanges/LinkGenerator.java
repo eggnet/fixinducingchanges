@@ -15,7 +15,6 @@ import models.SyntacticConfidence;
 
 public class LinkGenerator
 {
-	List<Link> links;
 	FixInducingDB db;
 	
 	String commitID_start;
@@ -24,18 +23,19 @@ public class LinkGenerator
 	public LinkGenerator(FixInducingDB db, String commitID_start, String commitID_end)
 	{
 		super();
-		links = new ArrayList<Link>();
 		this.db = db;
 		this.commitID_start = commitID_start;
 		this.commitID_end = commitID_end;
 	}
 	
-	public void generateLinks() {
+	public List<Link> generateLinks() {
+		List<Link> links = new ArrayList<Link>();
+		
 		List<Commit> commits = db.getAllCommits(commitID_start, commitID_end);
 		
 		if(commits == null) {
 			System.out.println("Unable to get commits for syntactis analysis.");
-			return;
+			return null;
 		}
 		
 		List<SyntacticConfidence> t = new ArrayList<SyntacticConfidence>();
@@ -47,7 +47,13 @@ public class LinkGenerator
 
 		if(t.size() != b.size()) {
 			System.out.println("Unable to build links due to uneven size.");
-			return;
+			return null;
+		}
+		else {
+			for(int i = 0; i < t.size(); i++) {
+				links.add(new Link(t.get(i), b.get(i)));
+			}
+			return links;
 		}
 	}
 }
