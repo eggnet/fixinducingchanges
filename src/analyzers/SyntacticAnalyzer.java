@@ -10,9 +10,7 @@ import models.SyntacticConfidence;
 
 public class SyntacticAnalyzer
 {
-	public static List<SyntacticConfidence> getSyntacticConfidence(Commit commit) {
-		int confidence = 0;
-		
+	public static List<SyntacticConfidence> getSyntacticConfidence(Commit commit) {		
 		List<SyntacticConfidence> results = new ArrayList<SyntacticConfidence>();
 		
 		// Find numbers
