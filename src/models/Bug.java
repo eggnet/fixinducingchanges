@@ -4,7 +4,6 @@ public class Bug
 {
 	private int		bug_id;
 	private String	assigned_to;
-	private String 	assigned_to_name;
 	private String	bug_status;
 	private String	short_desc;
 	
@@ -13,13 +12,11 @@ public class Bug
 		super();
 	}
 
-	public Bug(int bug_id, String assigned_to, String assigned_to_name,
-			String bug_status, String short_desc)
+	public Bug(int bug_id, String assigned_to, String bug_status, String short_desc)
 	{
 		super();
 		this.bug_id = bug_id;
 		this.assigned_to = assigned_to;
-		this.assigned_to_name = assigned_to_name;
 		this.bug_status = bug_status;
 		this.short_desc = short_desc;
 	}
@@ -42,16 +39,6 @@ public class Bug
 	public void setAssigned_to(String assigned_to)
 	{
 		this.assigned_to = assigned_to;
-	}
-
-	public String getAssigned_to_name()
-	{
-		return assigned_to_name;
-	}
-
-	public void setAssigned_to_name(String assigned_to_name)
-	{
-		this.assigned_to_name = assigned_to_name;
 	}
 
 	public String getBug_status()

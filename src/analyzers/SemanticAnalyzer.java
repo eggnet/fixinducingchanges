@@ -27,13 +27,13 @@ public class SemanticAnalyzer
 			
 			// Get the bug
 			Bug bug = db.getBug(syn.getBugNumber());
-			if(bug == null) {
+			if(bug != null) {
 				// Check for description
 				if(syn.getCommit().getComment().contains(bug.getShort_desc()))
 						sem.setConfidence(sem.getConfidence()+1);
 				
 				// Check the assignee of the bug
-				if(syn.getCommit().getAuthor().equals(bug.getAssigned_to_name()))
+				if(syn.getCommit().getAuthor().equals(bug.getAssigned_to()))
 					sem.setConfidence(sem.getConfidence()+1);
 				
 				// Check the bug activity for fixes
@@ -47,8 +47,8 @@ public class SemanticAnalyzer
 				
 				// Check attachments for file
 				FixInducingDB dbRepo = new FixInducingDB();
-				db.connect(Resources.repoDBName);
-				db.setBranchName(Resources.repoBranch);
+				dbRepo.connect(Resources.repoDBName);
+				dbRepo.setBranchName(Resources.repoBranch);
 				Set<String> files = dbRepo.getChangedFilesFromCommit(syn.getCommit().getCommit_id());
 				List<Attachment> attachments = db.getBugAttachments(syn.getBugNumber());
 				for(Attachment attach: attachments) {

@@ -51,12 +51,12 @@ public class FixInducingDB extends DbConnection
 	public Bug getBug(int bug_id) {
 		try {
 			Bug bug = null;
-			String sql = "SELECT bug_id, assigned_to, assigned_to_name, bug_status, short_desc " +
-					"FROM bugzilla_bugs WHERE bug_id=?";
-			String[] params = {((Integer)bug_id).toString()};
+			String sql = "SELECT bug_id, assigned_to, bug_status, short_desc " +
+					"FROM bugzilla_bugs WHERE bug_id=" + bug_id;
+			String[] params = {};
 			ResultSet rs = execPreparedQuery(sql, params);
 			if(rs.next())
-				bug = new Bug(rs.getInt("bug_id"), rs.getString("assigned_to"), rs.getString("assigned_to_name"),
+				bug = new Bug(rs.getInt("bug_id"), rs.getString("assigned_to"),
 						rs.getString("bug_status"), rs.getString("short_desc"));
 			
 			return bug;
@@ -70,8 +70,8 @@ public class FixInducingDB extends DbConnection
 		try {
 			List<Attachment> attachments = new ArrayList<Attachment>();
 			String sql = "SELECT bug_id, description, filename, submitter_id FROM bugzilla_attachments WHERE " +
-					"bug_id=?";
-			String[] params = {((Integer)bug_id).toString()};
+					"bug_id=" + bug_id;
+			String[] params = {};
 			ResultSet rs = execPreparedQuery(sql, params);
 			while(rs.next())
 				attachments.add(new Attachment(rs.getInt("bug_id"), rs.getString("description"), 
@@ -88,8 +88,8 @@ public class FixInducingDB extends DbConnection
 		try {
 			List<BugActivity> activity = new ArrayList<BugActivity>();
 			String sql = "SELECT bug_id, field, fieldid, added FROM bugzilla_bugs_activity WHERE " +
-					"bug_id=?";
-			String[] params = {((Integer)bug_id).toString()};
+					"bug_id=" + bug_id;
+			String[] params = {};
 			ResultSet rs = execPreparedQuery(sql, params);
 			while(rs.next())
 				activity.add(new BugActivity(rs.getInt("bug_id"), rs.getString("field"), 
