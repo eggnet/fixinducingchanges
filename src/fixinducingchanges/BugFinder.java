@@ -4,15 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import analyzers.SyntacticAnalyzer;
-
 import models.Bug;
 import models.Change;
 import models.Commit;
 import models.Link;
 import models.Pair;
-import models.SyntacticConfidence;
-
 import db.FixInducingDB;
 import differ.filediffer;
 import differ.filediffer.diffObjectResult;
@@ -171,9 +167,30 @@ public class BugFinder
 		for(Pair<String, String> candidate: candidates) {
 			if(isSuspect(candidate.getFirst(), getLatestReportedBug(total, candidate.getSecond()))) {
 				// Handle suspects here
+				if(!(isPartialFix(candidate.getFirst(), total) || isWeakSuspect()))
+					results.add(candidate);
+			}
+			else {
+				results.add(candidate);
 			}
 		}
 		
 		return results;
+	}
+	
+	private boolean isPartialFix(String potentialFix, List<Link> links) {
+		for(Link link: links) {
+			if(link.getSyn().getCommit().getCommit_id().equals(potentialFix) &&
+					(link.getSem().getConfidence() > 0 || 
+					(link.getSem().getConfidence() == 1 && link.getSyn().getConfidence() > 0))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	// TODO this seems comnfusing based on the paper.
+	private boolean isWeakSuspect() {
+		return false;
 	}
 }
