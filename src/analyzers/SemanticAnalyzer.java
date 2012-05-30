@@ -14,7 +14,7 @@ import fixinducingchanges.Resources;
 
 public class SemanticAnalyzer
 {
-	public static List<SemanticConfidence> getSyntacticConfidence(List<SyntacticConfidence> syns) {
+	public static List<SemanticConfidence> getSemanticConfidence(List<SyntacticConfidence> syns) {
 		
 		List<SemanticConfidence> results = new ArrayList<SemanticConfidence>();
 		

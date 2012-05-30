@@ -1,24 +1,28 @@
 package models;
 
+import java.sql.Timestamp;
+
 public class Bug
 {
 	private int		bug_id;
 	private String	assigned_to;
 	private String	bug_status;
 	private String	short_desc;
+	private Timestamp 	creation_ts;
 	
 	public Bug()
 	{
 		super();
 	}
 
-	public Bug(int bug_id, String assigned_to, String bug_status, String short_desc)
+	public Bug(int bug_id, String assigned_to, String bug_status, String short_desc, Timestamp creation_ts)
 	{
 		super();
 		this.bug_id = bug_id;
 		this.assigned_to = assigned_to;
 		this.bug_status = bug_status;
 		this.short_desc = short_desc;
+		this.creation_ts = creation_ts;
 	}
 
 	public int getBug_id()
@@ -59,5 +63,15 @@ public class Bug
 	public void setShort_desc(String short_desc)
 	{
 		this.short_desc = short_desc;
+	}
+
+	public Timestamp getCreation_ts()
+	{
+		return creation_ts;
+	}
+
+	public void setCreation_ts(Timestamp creation_ts)
+	{
+		this.creation_ts = creation_ts;
 	}
 }

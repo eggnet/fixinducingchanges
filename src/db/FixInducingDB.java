@@ -48,16 +48,40 @@ public class FixInducingDB extends DbConnection
 		}
 	}
 	
+	public List<Change> getAllOwnersForFileAtCommit(String FileId, String CommitId)
+	{
+		try 
+		{
+			LinkedList<Change> changes = new LinkedList<Change>();
+			String sql = "SELECT source_commit_id file_id, owner_id, char_start, char_end, change_type FROM owners natural join commits where commit_id=?" +
+					"and (branch_id is NULL OR branch_id=?) and file_id=? order by commit_date, commit_id, line_start;"; 
+			String[] parms = {CommitId, branchID, FileId};
+			ResultSet rs = execPreparedQuery(sql, parms);
+			while(rs.next())
+			{
+				changes.add(new Change(rs.getString("owner_id"), rs.getString("source_commit_id"), 
+						Resources.ChangeType.valueOf(rs.getString("change_type")), rs.getString("file_id"),
+						rs.getInt("line_start"), rs.getInt("line_end")));
+			}
+			return changes;
+		}
+		catch(SQLException e) 
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	public Bug getBug(int bug_id) {
 		try {
 			Bug bug = null;
-			String sql = "SELECT bug_id, assigned_to, bug_status, short_desc " +
+			String sql = "SELECT bug_id, assigned_to, bug_status, short_desc, creation_ts " +
 					"FROM bugzilla_bugs WHERE bug_id=" + bug_id;
 			String[] params = {};
 			ResultSet rs = execPreparedQuery(sql, params);
 			if(rs.next())
 				bug = new Bug(rs.getInt("bug_id"), rs.getString("assigned_to"),
-						rs.getString("bug_status"), rs.getString("short_desc"));
+						rs.getString("bug_status"), rs.getString("short_desc"), rs.getTimestamp("creation_ts"));
 			
 			return bug;
 		}

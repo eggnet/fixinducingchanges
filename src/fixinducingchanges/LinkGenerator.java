@@ -43,7 +43,7 @@ public class LinkGenerator
 			t.addAll(SyntacticAnalyzer.getSyntacticConfidence(commit));
 		}
 		
-		List<SemanticConfidence> b = SemanticAnalyzer.getSyntacticConfidence(t);
+		List<SemanticConfidence> b = SemanticAnalyzer.getSemanticConfidence(t);
 
 		if(t.size() != b.size()) {
 			System.out.println("Unable to build links due to uneven size.");

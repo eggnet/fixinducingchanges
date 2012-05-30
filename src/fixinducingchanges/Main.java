@@ -6,6 +6,7 @@ import db.FixInducingDB;
 
 import analyzers.SyntacticAnalyzer;
 import models.Commit;
+import models.Link;
 import models.SyntacticConfidence;
 
 public class Main
@@ -36,7 +37,11 @@ public class Main
 					
 					// Generate links
 					LinkGenerator generator = new LinkGenerator(db, args[0], args[1]);
-					generator.generateLinks();
+					List<Link> links = generator.generateLinks();
+					
+					// Find fix inducing changes
+					BugFinder finder = new BugFinder(db);
+					finder.findBugs(links);
 				} 
 				catch (Exception e) 
 				{
