@@ -2,34 +2,41 @@ package models;
 
 public class Attachment
 {
-	private int 	bug_id;
+	private String 	issue_num;
+	private String	title;
 	private String	description;
-	private String	filename;
-	private int		submitter_id;
 	
 	public Attachment()
 	{
 		super();
 	}
 
-	public Attachment(int bug_id, String description, String filename,
-			int submitter_id)
+	public Attachment(String issue_num, String title, String description)
 	{
 		super();
-		this.bug_id = bug_id;
+		this.issue_num = issue_num;
+		this.title = title;
 		this.description = description;
-		this.filename = filename;
-		this.submitter_id = submitter_id;
 	}
 
-	public int getBug_id()
+	public String getIssue_num()
 	{
-		return bug_id;
+		return issue_num;
 	}
 
-	public void setBug_id(int bug_id)
+	public void setIssue_num(String issue_num)
 	{
-		this.bug_id = bug_id;
+		this.issue_num = issue_num;
+	}
+
+	public String getTitle()
+	{
+		return title;
+	}
+
+	public void setTitle(String title)
+	{
+		this.title = title;
 	}
 
 	public String getDescription()
@@ -40,25 +47,5 @@ public class Attachment
 	public void setDescription(String description)
 	{
 		this.description = description;
-	}
-
-	public String getFilename()
-	{
-		return filename;
-	}
-
-	public void setFilename(String filename)
-	{
-		this.filename = filename;
-	}
-
-	public int getSubmitter_id()
-	{
-		return submitter_id;
-	}
-
-	public void setSubmitter_id(int submitter_id)
-	{
-		this.submitter_id = submitter_id;
 	}
 }

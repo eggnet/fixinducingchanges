@@ -6,9 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import models.Attachment;
-import models.Bug;
-import models.BugActivity;
 import models.Change;
 import models.Commit;
 
@@ -68,60 +65,6 @@ public class FixInducingDB extends DbConnection
 		catch(SQLException e) 
 		{
 			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	public Bug getBug(int bug_id) {
-		try {
-			Bug bug = null;
-			String sql = "SELECT bug_id, assigned_to, bug_status, short_desc, creation_ts " +
-					"FROM bugzilla_bugs WHERE bug_id=" + bug_id;
-			String[] params = {};
-			ResultSet rs = execPreparedQuery(sql, params);
-			if(rs.next())
-				bug = new Bug(rs.getInt("bug_id"), rs.getString("assigned_to"),
-						rs.getString("bug_status"), rs.getString("short_desc"), rs.getTimestamp("creation_ts"));
-			
-			return bug;
-		}
-		catch(SQLException e) {
-			return null;
-		}
-	}
-	
-	public List<Attachment> getBugAttachments(int bug_id) {
-		try {
-			List<Attachment> attachments = new ArrayList<Attachment>();
-			String sql = "SELECT bug_id, description, filename, submitter_id FROM bugzilla_attachments WHERE " +
-					"bug_id=" + bug_id;
-			String[] params = {};
-			ResultSet rs = execPreparedQuery(sql, params);
-			while(rs.next())
-				attachments.add(new Attachment(rs.getInt("bug_id"), rs.getString("description"), 
-						rs.getString("filename"), rs.getInt("submitter_id")));
-			
-			return attachments;
-		}
-		catch(SQLException e) {
-			return null;
-		}
-	}
-	
-	public List<BugActivity> getBugActivity(int bug_id) {
-		try {
-			List<BugActivity> activity = new ArrayList<BugActivity>();
-			String sql = "SELECT bug_id, field, fieldid, added FROM bugzilla_bugs_activity WHERE " +
-					"bug_id=" + bug_id;
-			String[] params = {};
-			ResultSet rs = execPreparedQuery(sql, params);
-			while(rs.next())
-				activity.add(new BugActivity(rs.getInt("bug_id"), rs.getString("field"), 
-						rs.getInt("fieldid"), rs.getString("added")));
-			
-			return activity;
-		}
-		catch(SQLException e) {
 			return null;
 		}
 	}

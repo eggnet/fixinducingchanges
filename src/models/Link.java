@@ -2,38 +2,50 @@ package models;
 
 public class Link
 {
-	private SyntacticConfidence syn;
-	private SemanticConfidence sem;
+	private String 	commit_id;
+	private String 	issue_num;
+	private float 	confidence;
 	
-	public Link(SyntacticConfidence syn, SemanticConfidence sem)
-	{
-		super();
-		this.syn = syn;
-		this.sem = sem;
-	}
-
 	public Link()
 	{
 		super();
 	}
 
-	public SyntacticConfidence getSyn()
+	public Link(String commit_id, String issue_num, float confidence)
 	{
-		return syn;
+		super();
+		this.commit_id = commit_id;
+		this.issue_num = issue_num;
+		this.confidence = confidence;
 	}
 
-	public void setSyn(SyntacticConfidence syn)
+	public String getCommit_id()
 	{
-		this.syn = syn;
+		return commit_id;
 	}
 
-	public SemanticConfidence getSem()
+	public void setCommit_id(String commit_id)
 	{
-		return sem;
+		this.commit_id = commit_id;
 	}
 
-	public void setSem(SemanticConfidence sem)
+	public String getIssue_num()
 	{
-		this.sem = sem;
+		return issue_num;
+	}
+
+	public void setIssue_num(String issue_num)
+	{
+		this.issue_num = issue_num;
+	}
+
+	public float getConfidence()
+	{
+		return confidence;
+	}
+
+	public void setConfidence(float confidence)
+	{
+		this.confidence = confidence;
 	}
 }
