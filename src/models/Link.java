@@ -3,7 +3,7 @@ package models;
 public class Link
 {
 	private String 	commit_id;
-	private String 	issue_num;
+	private int 	item_id;
 	private float 	confidence;
 	
 	public Link()
@@ -11,11 +11,11 @@ public class Link
 		super();
 	}
 
-	public Link(String commit_id, String issue_num, float confidence)
+	public Link(String commit_id, int item_id, float confidence)
 	{
 		super();
 		this.commit_id = commit_id;
-		this.issue_num = issue_num;
+		this.item_id = item_id;
 		this.confidence = confidence;
 	}
 
@@ -29,14 +29,14 @@ public class Link
 		this.commit_id = commit_id;
 	}
 
-	public String getIssue_num()
+	public int getIssue_num()
 	{
-		return issue_num;
+		return item_id;
 	}
 
-	public void setIssue_num(String issue_num)
+	public void setIssue_num(int item_id)
 	{
-		this.issue_num = issue_num;
+		this.item_id = item_id;
 	}
 
 	public float getConfidence()

@@ -1,16 +1,23 @@
 package db;
 
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import models.Change;
 import models.CommitFamily;
 import models.Diff;
+import db.util.ISetter;
+import db.util.ISetter.StringSetter;
+import db.util.PreparedStatementExecutionItem;
+import fixinducingchanges.FixResources;
 
 public class TechnicalDB extends DbConnection
 {
@@ -68,7 +75,7 @@ public class TechnicalDB extends DbConnection
 	{
 		try 
 		{
-			String sql = "SELECT commit_id, file_id, owner_id, char_start, char_end, change_type FROM owners natural join commits where commit_date <= (select commit_date from commits where commit_id=?)" +
+			String sql = "SELECT commit_id, source_commit_id, file_id, owner_id, char_start, char_end, change_type FROM owners natural join commits where commit_date <= (select commit_date from commits where commit_id=?)" +
 					"and (branch_id is NULL OR branch_id=?) and file_id=? order by commit_id;"; 
 			String[] parms = {CommitId, branchID, FileId};
 			ResultSet rs = execPreparedQuery(sql, parms);
@@ -86,7 +93,7 @@ public class TechnicalDB extends DbConnection
 					// first commit
 					currentCommit = rs.getString("commit_id");
 					currentChanges.add(new Change(rs.getString("owner_id"),
-												  rs.getString("commit_id"), 
+												  rs.getString("source_commit_id"), 
 												  Resources.ChangeType.valueOf(rs.getString("change_type")),
 												  rs.getString("file_id"),
 												  rs.getInt("char_start"),
@@ -99,7 +106,7 @@ public class TechnicalDB extends DbConnection
 					{
 						// same commit, push into current map
 						currentChanges.add(new Change(rs.getString("owner_id"),
-													  rs.getString("commit_id"), 
+													  rs.getString("source_commit_id"), 
 													  Resources.ChangeType.valueOf(rs.getString("change_type")),
 													  rs.getString("file_id"),
 													  rs.getInt("char_start"),
@@ -112,7 +119,7 @@ public class TechnicalDB extends DbConnection
 						currentCommit = commitId;
 						currentChanges = new LinkedList<Change>();
 						currentChanges.add(new Change(rs.getString("owner_id"),
-													  rs.getString("commit_id"), 
+													  rs.getString("source_commit_id"), 
 													  Resources.ChangeType.valueOf(rs.getString("change_type")),
 													  rs.getString("file_id"),
 													  rs.getInt("char_start"),
@@ -131,6 +138,57 @@ public class TechnicalDB extends DbConnection
 		{
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+	public Set<String> getChangedFilesForCommit(String CommitId)
+	{
+		try {
+			Set<String> files = new HashSet<String>();
+			String sql = "Select distinct file_id from file_diffs where new_commit_id=?";
+			ISetter[] parms = {new StringSetter(1, CommitId)};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, parms);
+			this.addExecutionItem(ei);
+			ei.waitUntilExecuted();
+			while (ei.getResult().next())
+			{
+				files.add(ei.getResult().getString("file_id"));
+			}
+			return files;
+		}
+		catch(SQLException e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public void exportBugs(Set<String> bugs, String fix) {
+		for(String bug: bugs) {
+			String query = "INSERT INTO fix_inducing (bug, fix) VALUES " +
+					"(?, ?)";
+			ISetter[] params = {
+					new StringSetter(1,bug),
+					new StringSetter(2,fix)
+			};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(query, params);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+		}
+	}
+	
+	public void createTable() {
+		try {
+			// Drop the table if it already exists
+			String query = "DROP TABLE IF EXISTS fix_inducing";
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(query, null);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+
+			runScript(new InputStreamReader(FixResources.class.getResourceAsStream("createTable.sql")));
+		}
+		catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

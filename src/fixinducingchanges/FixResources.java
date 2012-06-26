@@ -1,6 +1,8 @@
 package fixinducingchanges;
 
-public class Resources
+import db.Resources;
+
+public class FixResources extends Resources
 {	
 	public static int DB_LIMIT = 2000;
 	

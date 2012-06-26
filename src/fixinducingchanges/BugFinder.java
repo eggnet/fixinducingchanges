@@ -1,10 +1,13 @@
 package fixinducingchanges;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import models.Change;
+import models.Commit;
 import models.CommitFamily;
 import models.Diff;
 import models.Issue;
@@ -24,59 +27,79 @@ public class BugFinder
 		
 		this.sDB = sDB;
 		this.tDB = tDB;
+		
+		createTable();
+	}
+	
+	public void createTable() {
+		tDB.createTable();
 	}
 	
 	public void findBugs() {
 		int offset = 0;
 		
-		List<Issue> issues = sDB.getIssues(Resources.DB_LIMIT, offset);
+		List<Issue> issues = sDB.getIssues(FixResources.DB_LIMIT, offset);
 		
-		for(Issue issue: issues) {
-			// Handle each issue
-			List<Link> links = sDB.getLinksFromIssue(issue);
-			for(Link link: links) {
-				Set<String> files = getFilesFromCommit(link.getCommit_id());
-				
-				for(String file: files) {
-					List<Diff> diffs = tDB.getDiffsFromCommitAndFile(link.getCommit_id(), file);
+		for(;;) {
+			for(Issue issue: issues) {
+				List<Link> links = sDB.getLinksFromIssue(issue);
+				for(Link link: links) {
+					Set<String> files = getFilesFromCommit(link.getCommit_id());
 					
-					if(!diffs.isEmpty()) {
-						List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOld_commit_id());
-						
-						List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOld_commit_id(), 
-								oldCommitPath);
-						
-						for(Change change: oldOwners) {
-							for(Diff diff: diffs) {
-								if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
-										change.getCharStart(), change.getCharEnd())) {
-									// Do something with the found old change
+					Set<String> fixInducing = new HashSet<String>();
+
+					for(String file: files) {
+						List<Diff> diffs = tDB.getDiffsFromCommitAndFile(link.getCommit_id(), file);
+
+						if(!diffs.isEmpty()) {
+							List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOld_commit_id());
+
+							List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOld_commit_id(), 
+									oldCommitPath);
+							
+							if(!oldOwners.isEmpty()) {
+								for(Change change: oldOwners) {
+									for(Diff diff: diffs) {
+										if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
+												change.getCharStart(), change.getCharEnd())) {
+											updateCandidates(fixInducing, change.getCommitId(), issue.getCreation_ts());
+										}
+									}
 								}
 							}
 						}
-						
-						
 					}
 					
+					if(!fixInducing.isEmpty()) {
+						tDB.exportBugs(fixInducing, link.getCommit_id());
+					}
 				}
 			}
 			
-			
-			if(issues.size() < Resources.DB_LIMIT)
+			if(issues.size() < FixResources.DB_LIMIT)
 				break;
 			else {
-				offset += Resources.DB_LIMIT;
-				issues = sDB.getIssues(Resources.DB_LIMIT, offset);
+				offset += FixResources.DB_LIMIT;
+				issues = sDB.getIssues(FixResources.DB_LIMIT, offset);
 			}
 		}
 		
 	}
 	
 	private boolean rangesIntersect(int start1, int end1, int start2, int end2) {
-		return !(start1 >= end2 || end2 >= start1);
+		return !(start1 >= end2 || start2 >= end1);
 	}
 	
 	private Set<String> getFilesFromCommit(String commit) {
-		return tDB.getChangesetForCommit(commit);
+		return tDB.getChangedFilesForCommit(commit);
+	}
+	
+	private void updateCandidates(Set<String> candidates, String candidate, Timestamp limit) {
+		if(candidates.contains(candidate))
+			return;
+		
+		Commit commit = tDB.getCommit(candidate);
+		if(!commit.getCommit_date().after(limit))
+			candidates.add(candidate);
 	}
 }

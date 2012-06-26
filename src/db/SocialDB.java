@@ -47,7 +47,8 @@ public class SocialDB extends DbConnection
 			ResultSet rs = execPreparedQuery(sql, parms);
 			while(rs.next())
 			{
-				links.add(new Link());
+				links.add(new Link(rs.getString("commit_id"), rs.getInt("item_id"),
+						rs.getFloat("confidence")));
 			}
 			
 			return links;

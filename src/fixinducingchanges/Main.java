@@ -33,12 +33,17 @@ public class Main
 				{
 					// Setup the DB connections
 					tDB.connect(args[0]);
-					tDB.setBranchID(args[1]);
+					tDB.setBranchName(args[1]);
 					sDB.connect(args[2]);
 					
 					// Find fix inducing changes
 					BugFinder finder = new BugFinder(sDB, tDB);
 					finder.findBugs();
+					
+					
+					// Close the DB connections
+					tDB.close();
+					sDB.close();
 				} 
 				catch (Exception e) 
 				{

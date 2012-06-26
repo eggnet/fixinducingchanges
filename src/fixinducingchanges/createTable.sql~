@@ -1,0 +1,7 @@
+--///////////////// FIX INDUCING TABLE /////////////////-- 
+
+CREATE TABLE fix_inducing (
+	bug character varying(255) references commits(commit_id),
+	fix character varying(255) references commits(commit_id)
+);
+
