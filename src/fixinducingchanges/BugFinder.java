@@ -57,7 +57,7 @@ public class BugFinder
 							List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOldCommit_id(), 
 									oldCommitPath);
 							
-							if(!oldOwners.isEmpty()) {
+							if(oldOwners != null && !oldOwners.isEmpty()) {
 								for(Change change: oldOwners) {
 									for(DiffEntry diff: diffs) {
 										if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
@@ -99,7 +99,9 @@ public class BugFinder
 			return;
 		
 		Commit commit = tDB.getCommit(candidate);
-		if(!commit.getCommit_date().after(limit))
+		if(!commit.getCommit_date().after(limit)) {
+			System.out.println("Found a bug candidate: " + commit.getCommit_id());
 			candidates.add(candidate);
+		}
 	}
 }
