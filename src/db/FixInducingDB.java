@@ -1,20 +1,56 @@
 package db;
 
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
+import db.util.ISetter;
+import db.util.PreparedStatementExecutionItem;
+import db.util.ISetter.StringSetter;
+import fixinducingchanges.FixResources;
 
 import models.Change;
 import models.Commit;
 
 
-public class FixInducingDB extends DbConnection
+public class FixInducingDB extends TechnicalDb
 {
 	public FixInducingDB()
 	{
 		super();
+	}
+	
+	public void exportBugs(Set<String> bugs, String fix) {
+		for(String bug: bugs) {
+			String query = "INSERT INTO fix_inducing (bug, fix) VALUES " +
+					"(?, ?)";
+			ISetter[] params = {
+					new StringSetter(1,bug),
+					new StringSetter(2,fix)
+			};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(query, params);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+		}
+	}
+	
+	public void createTable() {
+		try {
+			// Drop the table if it already exists
+			String query = "DROP TABLE IF EXISTS fix_inducing";
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(query, null);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+
+			runScript(new InputStreamReader(FixResources.class.getResourceAsStream("createTable.sql")));
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -32,8 +68,13 @@ public class FixInducingDB extends DbConnection
 					"commit_date >= (select commit_date from commits where commit_id=?) AND " +
 					"(branch_id is NULL or branch_id=?) " +
 					"ORDER BY commit_date, commit_id";
-			String[] params = {commitID_end, commitID_start, branchID};
-			ResultSet rs = execPreparedQuery(sql, params);
+			
+			ISetter[] parms = {new StringSetter(1, commitID_end), new StringSetter(2, commitID_start), new StringSetter(3, branchID)};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, parms);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+			ResultSet rs = ei.getResult();
+
 			while(rs.next())
 				commits.add(new Commit(rs.getInt("id"), rs.getString("commit_id"), rs.getString("author"),
 						rs.getString("author_email"), rs.getString("comments"), null, branchID));
@@ -52,8 +93,13 @@ public class FixInducingDB extends DbConnection
 			LinkedList<Change> changes = new LinkedList<Change>();
 			String sql = "SELECT source_commit_id, file_id, owner_id, char_start, char_end, change_type FROM owners natural join commits where commit_id=?" +
 					"and (branch_id is NULL OR branch_id=?) and file_id=? order by commit_date, commit_id, char_start;"; 
-			String[] parms = {CommitId, branchID, FileId};
-			ResultSet rs = execPreparedQuery(sql, parms);
+		
+			ISetter[] parms = {new StringSetter(1, CommitId), new StringSetter(2, branchID), new StringSetter(3, FileId)};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, parms);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+			ResultSet rs = ei.getResult();
+
 			while(rs.next())
 			{
 				changes.add(new Change(rs.getString("owner_id"), rs.getString("source_commit_id"), 

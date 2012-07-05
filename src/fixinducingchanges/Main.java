@@ -1,11 +1,7 @@
 package fixinducingchanges;
 
-import java.util.List;
-
-import models.Commit;
 import db.FixInducingDB;
-import db.SocialDB;
-import db.TechnicalDB;
+import db.SocialDb;
 
 public class Main
 {
@@ -18,9 +14,8 @@ public class Main
 	 */
 	public static void main(String[] args) {
 		System.out.println("FixInducingChanges tool developed by eggnet.");
-		FixInducingDB db = new FixInducingDB();
-		TechnicalDB tDB = new TechnicalDB();
-		SocialDB sDB = new SocialDB();
+		FixInducingDB tDB = new FixInducingDB();
+		SocialDb sDB 	 = new SocialDb();
 		try {
 			if (args.length < 3 )
 			{

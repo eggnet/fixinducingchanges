@@ -9,19 +9,19 @@ import java.util.Set;
 import models.Change;
 import models.Commit;
 import models.CommitFamily;
-import models.Diff;
+import models.DiffEntry;
 import models.Issue;
 import models.Link;
 import models.Pair;
-import db.SocialDB;
-import db.TechnicalDB;
+import db.FixInducingDB;
+import db.SocialDb;
 
 public class BugFinder
 {
-	private SocialDB sDB;
-	private TechnicalDB tDB;
+	private SocialDb sDB;
+	private FixInducingDB tDB;
 	
-	public BugFinder(SocialDB sDB, TechnicalDB tDB)
+	public BugFinder(SocialDb sDB, FixInducingDB tDB)
 	{
 		super();
 		
@@ -44,25 +44,25 @@ public class BugFinder
 			for(Issue issue: issues) {
 				List<Link> links = sDB.getLinksFromIssue(issue);
 				for(Link link: links) {
-					Set<String> files = getFilesFromCommit(link.getCommit_id());
+					Set<String> files = getFilesFromCommit(link.getCommitID());
 					
 					Set<String> fixInducing = new HashSet<String>();
 
 					for(String file: files) {
-						List<Diff> diffs = tDB.getDiffsFromCommitAndFile(link.getCommit_id(), file);
+						List<DiffEntry> diffs = tDB.getDiffsFromCommitAndFile(link.getCommitID(), file);
 
 						if(!diffs.isEmpty()) {
-							List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOld_commit_id());
+							List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOldCommit_id());
 
-							List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOld_commit_id(), 
+							List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOldCommit_id(), 
 									oldCommitPath);
 							
 							if(!oldOwners.isEmpty()) {
 								for(Change change: oldOwners) {
-									for(Diff diff: diffs) {
+									for(DiffEntry diff: diffs) {
 										if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
 												change.getCharStart(), change.getCharEnd())) {
-											updateCandidates(fixInducing, change.getCommitId(), issue.getCreation_ts());
+											updateCandidates(fixInducing, change.getCommitId(), issue.getCreationTS());
 										}
 									}
 								}
@@ -71,7 +71,7 @@ public class BugFinder
 					}
 					
 					if(!fixInducing.isEmpty()) {
-						tDB.exportBugs(fixInducing, link.getCommit_id());
+						tDB.exportBugs(fixInducing, link.getCommitID());
 					}
 				}
 			}
@@ -91,7 +91,7 @@ public class BugFinder
 	}
 	
 	private Set<String> getFilesFromCommit(String commit) {
-		return tDB.getChangedFilesForCommit(commit);
+		return tDB.getChangesetForCommit(commit);
 	}
 	
 	private void updateCandidates(Set<String> candidates, String candidate, Timestamp limit) {
