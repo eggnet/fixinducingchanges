@@ -47,22 +47,30 @@ public class BugFinder
 					Set<String> files = getFilesFromCommit(link.getCommitID());
 					
 					Set<String> fixInducing = new HashSet<String>();
+					
+					if(files.size() > 20) {
+						System.out.println("Skipping link: " + link.getCommitID());
+						continue;
+					}
 
 					for(String file: files) {
 						List<DiffEntry> diffs = tDB.getDiffsFromCommitAndFile(link.getCommitID(), file);
 
 						if(!diffs.isEmpty()) {
-							List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOldCommit_id());
-
-							List<Change> oldOwners = tDB.getAllOwnersForFileAtCommit(file, diffs.get(0).getOldCommit_id(), 
-									oldCommitPath);
+							List<CommitFamily> newCommitPath = tDB.getCommitPathToRoot(diffs.get(0).getOldCommit_id());
+							String commit = getCommitOutsideBug(newCommitPath, issue.getCreationTS());
 							
-							if(oldOwners != null && !oldOwners.isEmpty()) {
-								for(Change change: oldOwners) {
-									for(DiffEntry diff: diffs) {
-										if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
-												change.getCharStart(), change.getCharEnd())) {
-											updateCandidates(fixInducing, change.getCommitId(), issue.getCreationTS());
+							if(commit != null) {
+								List<CommitFamily> oldCommitPath = tDB.getCommitPathToRoot(commit);
+								List<Change> sourceChanges = tDB.getSourceCommitsForFileAtCommit(file, oldCommitPath);
+
+								if(sourceChanges != null && !sourceChanges.isEmpty()) {
+									for(Change change: sourceChanges) {
+										for(DiffEntry diff: diffs) {
+											if(rangesIntersect(diff.getChar_start(), diff.getChar_end(), 
+													change.getCharStart(), change.getCharEnd())) {
+												updateCandidates(fixInducing, change.getCommitId(), issue.getCreationTS());
+											}
 										}
 									}
 								}
@@ -75,6 +83,8 @@ public class BugFinder
 					}
 				}
 			}
+			
+			System.out.println("Done issue batch");
 			
 			if(issues.size() < FixResources.DB_LIMIT)
 				break;
@@ -99,9 +109,21 @@ public class BugFinder
 			return;
 		
 		Commit commit = tDB.getCommit(candidate);
-		if(!commit.getCommit_date().after(limit)) {
-			System.out.println("Found a bug candidate: " + commit.getCommit_id());
-			candidates.add(candidate);
+		System.out.println("Found a bug candidate: " + commit.getCommit_id());
+		candidates.add(candidate);
+	}
+	
+	private String getCommitOutsideBug(List<CommitFamily> commitPath, Timestamp creationTS) {
+		String commit;
+		Commit candidate;
+		
+		for(int i = 0; i < commitPath.size(); i++) {
+			commit = commitPath.get(i).getChildId();
+			candidate = tDB.getCommit(commit);
+			if(candidate != null && candidate.getCommit_date().before(creationTS))
+				return commit;
 		}
+		
+		return null;
 	}
 }

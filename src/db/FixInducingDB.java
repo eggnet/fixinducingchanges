@@ -4,8 +4,10 @@ import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import db.util.ISetter;
@@ -15,6 +17,7 @@ import fixinducingchanges.FixResources;
 
 import models.Change;
 import models.Commit;
+import models.CommitFamily;
 
 
 public class FixInducingDB extends TechnicalDb
@@ -53,65 +56,73 @@ public class FixInducingDB extends TechnicalDb
 		}
 	}
 	
-	/**
-	 * This functions returns all commits that are in between two commit IDs 
-	 * inclusively.
-	 * @param commitID_start
-	 * @param commitID_end
-	 * @return
-	 */
-	public List<Commit> getAllCommits(String commitID_start, String commitID_end) {
+	public List<Change> getSourceCommitsForFileAtCommit(String file, List<CommitFamily> commitPath) {
 		try {
-			List<Commit> commits = new ArrayList<Commit>();
-			String sql = "SELECT id, commit_id, author, author_email, comments, commit_date FROM commits WHERE " +
-					"commit_date <= (select commit_date from commits where commit_id=?) AND " +
-					"commit_date >= (select commit_date from commits where commit_id=?) AND " +
-					"(branch_id is NULL or branch_id=?) " +
-					"ORDER BY commit_date, commit_id";
+			String commit = getCommitInPathWithOwnershipOfFile(file, commitPath);
 			
-			ISetter[] parms = {new StringSetter(1, commitID_end), new StringSetter(2, commitID_start), new StringSetter(3, branchID)};
-			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, parms);
+			if(commit == null)
+				return null;
+			
+			String sql = "SELECT source_commit_id, owner_id, file_id, char_start, char_end, change_type FROM " +
+						"owners WHERE file_id=? AND commit_id=?";
+			
+			ISetter[] params = {new StringSetter(1,file), new StringSetter(2,commit)};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, params);
 			addExecutionItem(ei);
 			ei.waitUntilExecuted();
 			ResultSet rs = ei.getResult();
 
-			while(rs.next())
-				commits.add(new Commit(rs.getInt("id"), rs.getString("commit_id"), rs.getString("author"),
-						rs.getString("author_email"), rs.getString("comments"), null, branchID));
-			
-			return commits;
-		}
-		catch(SQLException e) {
-			return null;
-		}
-	}
-	
-	public List<Change> getAllOwnersForFileAtCommit(String FileId, String CommitId)
-	{
-		try 
-		{
-			LinkedList<Change> changes = new LinkedList<Change>();
-			String sql = "SELECT source_commit_id, file_id, owner_id, char_start, char_end, change_type FROM owners natural join commits where commit_id=?" +
-					"and (branch_id is NULL OR branch_id=?) and file_id=? order by commit_date, commit_id, char_start;"; 
-		
-			ISetter[] parms = {new StringSetter(1, CommitId), new StringSetter(2, branchID), new StringSetter(3, FileId)};
-			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, parms);
-			addExecutionItem(ei);
-			ei.waitUntilExecuted();
-			ResultSet rs = ei.getResult();
+			List<Change> sourceChanges = new ArrayList<Change>();
 
 			while(rs.next())
 			{
-				changes.add(new Change(rs.getString("owner_id"), rs.getString("source_commit_id"), 
-						Resources.ChangeType.valueOf(rs.getString("change_type")), rs.getString("file_id"),
-						rs.getInt("char_start"), rs.getInt("char_end")));
+				sourceChanges.add(new Change(rs.getString("owner_id"),
+						  rs.getString("source_commit_id"), 
+						  Resources.ChangeType.valueOf(rs.getString("change_type")),
+						  rs.getString("file_id"),
+						  rs.getInt("char_start"),
+						  rs.getInt("char_end")));
 			}
-			return changes;
+
+			return sourceChanges;
 		}
-		catch(SQLException e) 
-		{
+		catch(SQLException e) {
 			e.printStackTrace();
-			return null;
 		}
+		
+		return null;
+	}
+	
+	private String getCommitInPathWithOwnershipOfFile(String file, List<CommitFamily> commitPath) {
+		try {
+			String commitIN = "(";
+			for(CommitFamily commitF: commitPath) {
+				commitIN += "\'" + commitF.getChildId() + "\', ";
+			}
+			commitIN = commitIN.substring(0, commitIN.length()-2) + ")";
+			
+			String sql = "SELECT * FROM (" +
+						"SELECT owners.commit_id, source_commit_id FROM owners JOIN commits ON (owners.commit_id=commits.commit_id) WHERE " +
+						"file_id=? AND owners.commit_id IN " + commitIN + 
+						") AS temp JOIN commits ON (temp.commit_id=commits.commit_id) WHERE " +
+						"commits.commit_date = (SELECT max(commits.commit_date) FROM (" +
+						"SELECT owners.commit_id, source_commit_id FROM owners JOIN commits ON (owners.commit_id=commits.commit_id) WHERE " +
+						"file_id=? AND owners.commit_id IN " + commitIN +
+						") AS tempB JOIN commits ON (tempB.commit_id=commits.commit_id))";
+			
+			ISetter[] params = {new StringSetter(1,file), new StringSetter(2,file)};
+			PreparedStatementExecutionItem ei = new PreparedStatementExecutionItem(sql, params);
+			addExecutionItem(ei);
+			ei.waitUntilExecuted();
+			ResultSet rs = ei.getResult();
+			
+			if(rs.next()) {
+				return rs.getString("commit_id");
+			}
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
